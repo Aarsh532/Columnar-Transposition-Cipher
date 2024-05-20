@@ -1,0 +1,133 @@
+#!/usr/bin/python3
+import sys, os, math
+import array as arr
+import numpy as np
+
+def keySort(keyFile):
+    #print("Key: " + keyFile)
+    char_with_index = [(char, i) for i, char in enumerate(keyFile)]
+    sorted_char_with_index = sorted(char_with_index, key=lambda x: x[0])
+    return [original_index for _, original_index in sorted_char_with_index]
+
+def isFile(x):
+  return os.path.isfile(x)
+
+def decrypt(width, length, input, key, blocksize):
+    counter = 0
+    x = 0
+    decryptSentence = ""
+    shortBlocks = False
+    area = width *  int(length)
+    leftover = 0
+    arr = [[0 for x in range(width)] for y in range(int(length))]
+    m = math.ceil(width * int(length))
+    #print("M = " + str(m))
+    if(len(input) > m | m != 0):
+        r = math.ceil(len(input)/m)
+    else:
+        r = 1
+    
+    if(width < len(key)):
+        shortBlocks = True
+        for j in key:
+            if j < width:
+                continue
+            else:
+                key.remove(j)
+                
+    
+    if(len(input) < area * r):
+        leftover = (area * r) - (len(input)+1)
+    
+    while(x < r):
+        x = x +1 
+        for j in key:
+            for i in range(int(length)):
+                if(counter < len(input)):
+                    if(x == r and (i == length-1 and j >= ((width-1)-leftover))):
+                        arr[i][j] = "*"
+                        counter = counter - 1
+                    else:
+                        arr[i][j] = input[counter]
+    
+                counter = counter + 1
+        #print(arr)
+        
+        for i in range(int(length)):
+            for j in range(width):
+                if(arr[i][j] == "0"):
+                    decryptSentence = decryptSentence + "\n"
+                elif(arr[i][j] == "*"):
+                    continue
+                else:
+                    decryptSentence = decryptSentence + str(arr[i][j])
+                
+                
+        
+    
+    print(decryptSentence)
+                
+       
+                
+        
+           
+
+def main():
+    offset = 0
+    line = ""
+    #argv:1 = -b
+    #argv:2 = blocksize
+    #argv:3 = -k
+    #argv:4 = key
+    #argv:5 = inputfile
+    
+    if(sys.argv[1] != "-b"):
+        blocksize = 16
+        offset = 2
+    else:
+        blocksize = sys.argv[2]
+        
+    if(isFile(sys.argv[4 - offset])):
+        file = open(sys.argv[4- offset], "r")
+        content = file.read()
+        file.close()
+        key = keySort(content)
+        width = len(content)
+    else:
+        width = (len(sys.argv[4- offset]))
+    
+    #print(offset)
+    if(len(sys.argv) <= 5-offset):
+        #print("No File")
+        while True:
+            character = sys.stdin.read(1)
+            if character == "\n":
+                break
+            line += character
+        content = line
+
+    else: 
+        if(isFile(sys.argv[5 - offset])):
+            file = open(sys.argv[5- offset], "r")
+            content = file.read()
+            file.close()
+    #Do from standard input else
+    
+    length = math.ceil(len(content)/width)
+    if(int(blocksize) < width):
+        width = int(blocksize)
+        length = 1
+    elif((width*length) > int(blocksize)):
+        length = int(blocksize)/width
+    
+    if(len(key) == 1):
+        print(content)
+    else:
+        decrypt(width, length, content, key, blocksize)
+    
+    
+if __name__ == '__main__':
+    if "-k" in sys.argv:
+        main()
+    else:
+        print("Error: Key Not Found")
